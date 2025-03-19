@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wild West Saloon | Memphis Style</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Futura:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --hot-pink: #FF69B4;
+      --sky-blue: #00BFFF;
+      --canary: #FFD700;
+      --lime: #32CD32;
+      --orange: #FF4500;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Futura', 'Helvetica', sans-serif;
+      background: #2b1810;
+      color: var(--canary);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    .saloon {
+      position: relative;
+      width: 100vw;
+      min-height: 100vh;
+      background: 
+        linear-gradient(rgba(43, 24, 16, 0.9), rgba(43, 24, 16, 0.9)),
+        repeating-linear-gradient(
+          45deg,
+          var(--hot-pink) 0%,
+          var(--hot-pink) 2%,
+          transparent 2%,
+          transparent 4%
+        );
+    }
+
+    .nav-bar {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .nav-button {
+      padding: 10px 20px;
+      background: var(--sky-blue);
+      border: 3px solid #000;
+      color: #000;
+      font-family: 'Futura', sans-serif;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 4px 4px 0 var(--hot-pink);
+      transition: transform 0.2s;
+    }
+
+    .nav-button:hover {
+      transform: scale(1.1);
+    }
+
+    .jukebox {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 20px;
+      border: 4px solid #000;
+      box-shadow: 8px 8px 0 var(--hot-pink);
+      z-index: 100;
+    }
+
+    .jukebox h2 {
+      color: var(--orange);
+      margin: 0 0 10px 0;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    .song-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .song-button {
+      padding: 8px 15px;
+      background: var(--canary);
+      border: 2px solid #000;
+      color: #000;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .song-button:hover {
+      transform: scale(1.05);
+    }
+
+    .dance-floor {
+      position: relative;
+      width: 80%;
+      height: 400px;
+      margin: 100px auto;
+      background: rgba(0, 0, 0, 0.3);
+      border: 4px solid var(--canary);
+      overflow: hidden;
+    }
+
+    .dancer {
+      position: absolute;
+      font-size: 40px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .dancer:hover {
+      transform: scale(1.2);
+    }
+
+    .piano {
+      position: relative;
+      width: 80%;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border: 4px solid #000;
+      box-shadow: 8px 8px 0 var(--hot-pink);
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .piano-key {
+      width: 40px;
+      height: 120px;
+      background: white;
+      border: 2px solid #000;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .piano-key:hover {
+      transform: translateY(5px);
+      background: var(--sky-blue);
+    }
+
+    .piano-key.black {
+      background: #000;
+      height: 80px;
+      width: 30px;
+      margin: 0 -15px;
+      z-index: 1;
+    }
+
+    .piano-key.black:hover {
+      background: #333;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      pointer-events: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .record-player {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 100px;
+      height: 100px;
+      background: #000;
+      border-radius: 50%;
+      border: 4px solid var(--canary);
+      animation: spin 2s linear infinite;
+      display: none;
+    }
+
+    .record-player.playing {
+      display: block;
+    }
+
+    .record-player::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      background: var(--canary);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+<body>
+  <div class="saloon">
+    <div class="nav-bar">
+      <a href="index.html" class="nav-button">Stats</a>
+      <a href="adventures.html" class="nav-button">Adventures</a>
+      <a href="showdown.html" class="nav-button">Showdown</a>
+    </div>
+
+    <div class="jukebox">
+      <h2>🎵 Saloon Tunes 🎵</h2>
+      <div class="song-list">
+        <button class="song-button" onclick="playSong('piano')">Piano Rag</button>
+        <button class="song-button" onclick="playSong('banjo')">Banjo Ballad</button>
+        <button class="song-button" onclick="playSong('fiddle')">Fiddle Dance</button>
+      </div>
+    </div>
+
+    <div class="dance-floor" id="danceFloor"></div>
+
+    <div class="piano">
+      <div class="piano-key" data-note="C"></div>
+      <div class="piano-key black" data-note="C#"></div>
+      <div class="piano-key" data-note="D"></div>
+      <div class="piano-key black" data-note="D#"></div>
+      <div class="piano-key" data-note="E"></div>
+      <div class="piano-key" data-note="F"></div>
+      <div class="piano-key black" data-note="F#"></div>
+      <div class="piano-key" data-note="G"></div>
+      <div class="piano-key black" data-note="G#"></div>
+      <div class="piano-key" data-note="A"></div>
+      <div class="piano-key black" data-note="A#"></div>
+      <div class="piano-key" data-note="B"></div>
+    </div>
+
+    <div class="record-player"></div>
+  </div>
+
+  <!-- Audio elements -->
+  <audio id="piano-music" src="https://assets.mixkit.co/active_storage/sfx/2409/2409-preview.mp3" loop></audio>
+  <audio id="banjo-music" src="https://assets.mixkit.co/active_storage/sfx/2410/2410-preview.mp3" loop></audio>
+  <audio id="fiddle-music" src="https://assets.mixkit.co/active_storage/sfx/2411/2411-preview.mp3" loop></audio>
+
+  <script>
+    const dancers = ['🤠', '💃', '🕺', '🌵'];
+    let currentMusic = null;
+    const danceFloor = document.getElementById('danceFloor');
+    const recordPlayer = document.querySelector('.record-player');
+
+    // Create initial dancers
+    for (let i = 0; i < 8; i++) {
+      createDancer();
+    }
+
+    function createDancer() {
+      const dancer = document.createElement('div');
+      dancer.className = 'dancer';
+      dancer.textContent = dancers[Math.floor(Math.random() * dancers.length)];
+      dancer.style.left = Math.random() * 80 + 10 + '%';
+      dancer.style.top = Math.random() * 80 + 10 + '%';
+      danceFloor.appendChild(dancer);
+
+      // Start dancing
+      animateDancer(dancer);
+    }
+
+    function animateDancer(dancer) {
+      anime({
+        targets: dancer,
+        translateX: anime.random(-50, 50),
+        translateY: anime.random(-50, 50),
+        rotate: anime.random(-45, 45),
+        duration: anime.random(2000, 4000),
+        easing: 'easeInOutQuad',
+        complete: () => animateDancer(dancer),
+      });
+    }
+
+    function playSong(type) {
+      // Stop current music
+      if (currentMusic) {
+        document.getElementById(currentMusic + '-music').pause();
+        document.getElementById(currentMusic + '-music').currentTime = 0;
+      }
+
+      // Play new music
+      const audio = document.getElementById(type + '-music');
+      audio.play();
+      currentMusic = type;
+
+      // Show record player
+      recordPlayer.classList.add('playing');
+
+      // Make dancers more energetic
+      document.querySelectorAll('.dancer').forEach(dancer => {
+        anime({
+          targets: dancer,
+          scale: [1, 1.2],
+          duration: 200,
+          easing: 'easeInOutQuad',
+          direction: 'alternate',
+          loop: true
+        });
+      });
+
+      // Create confetti
+      createConfetti();
+    }
+
+    function createConfetti() {
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.background = [
+          '#FF69B4', // hot pink
+          '#00BFFF', // sky blue
+          '#FFD700', // canary
+          '#32CD32', // lime
+          '#FF4500'  // orange
+        ][Math.floor(Math.random() * 5)];
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.top = -20 + 'px';
+        document.body.appendChild(confetti);
+
+        anime({
+          targets: confetti,
+          translateY: window.innerHeight + 20,
+          translateX: anime.random(-100, 100),
+          rotate: anime.random(-360, 360),
+          duration: anime.random(1000, 3000),
+          easing: 'easeInOutQuad',
+          complete: () => confetti.remove()
+        });
+      }
+    }
+
+    // Piano interaction
+    document.querySelectorAll('.piano-key').forEach(key => {
+      key.addEventListener('click', () => {
+        const note = key.dataset.note;
+        key.style.background = '#FF69B4'; // hot pink
+        setTimeout(() => {
+          key.style.background = key.classList.contains('black') ? '#000' : '#fff';
+        }, 100);
+
+        // Create musical note emoji
+        const noteEmoji = document.createElement('div');
+        noteEmoji.textContent = '🎵';
+        noteEmoji.style.position = 'absolute';
+        noteEmoji.style.left = key.offsetLeft + 'px';
+        noteEmoji.style.top = key.offsetTop + 'px';
+        noteEmoji.style.fontSize = '24px';
+        noteEmoji.style.pointerEvents = 'none';
+        document.body.appendChild(noteEmoji);
+
+        anime({
+          targets: noteEmoji,
+          translateY: -100,
+          opacity: [1, 0],
+          duration: 1000,
+          easing: 'easeOutQuad',
+          complete: () => noteEmoji.remove()
+        });
+      });
+    });
+
+    // Click anywhere to add more dancers
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('dancer')) {
+        // Make clicked dancer do a special move
+        anime({
+          targets: e.target,
+          rotate: 360,
+          scale: [1, 2, 1],
+          duration: 1000,
+          easing: 'easeOutElastic(1, .8)'
+        });
+      } else if (e.target.closest('.dance-floor')) {
+        createDancer();
+      }
+    });
+  </script>
+</body>
+</html> 
