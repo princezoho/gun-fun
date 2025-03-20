@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wild West Adventures | Memphis Style</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Futura:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --hot-pink: #FF69B4;
+      --sky-blue: #00BFFF;
+      --canary: #FFD700;
+      --lime: #32CD32;
+      --orange: #FF4500;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Futura', 'Helvetica', sans-serif;
+      background: #000000;
+      color: var(--canary);
+      overflow-x: hidden;
+    }
+
+    /* Memphis background patterns */
+    .background-patterns {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.1;
+    }
+
+    .pattern-1 {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 10% 20%, var(--hot-pink) 1%, transparent 1%) 0 0,
+        radial-gradient(circle at 90% 80%, var(--sky-blue) 1%, transparent 1%) 0 0;
+      background-size: 50px 50px;
+    }
+
+    .pattern-2 {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(45deg, var(--orange) 25%, transparent 25%) -50px 0,
+        linear-gradient(-45deg, var(--orange) 25%, transparent 25%) -50px 0;
+      background-size: 100px 100px;
+      opacity: 0.05;
+    }
+
+    .header {
+      padding: 40px;
+      text-align: center;
+      position: relative;
+    }
+
+    .title {
+      font-size: 4em;
+      color: var(--hot-pink);
+      text-shadow: 
+        4px 4px 0 #000,
+        -4px -4px 0 #000,
+        4px -4px 0 #000,
+        -4px 4px 0 #000;
+      margin: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .subtitle {
+      font-size: 1.5em;
+      color: var(--sky-blue);
+      margin-top: 10px;
+    }
+
+    /* Decorative elements */
+    .geometric-shapes {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .shape {
+      position: absolute;
+      opacity: 0;
+    }
+
+    .circle {
+      width: 60px;
+      height: 60px;
+      border: 4px solid var(--hot-pink);
+      border-radius: 50%;
+    }
+
+    .triangle {
+      width: 0;
+      height: 0;
+      border-left: 30px solid transparent;
+      border-right: 30px solid transparent;
+      border-bottom: 52px solid var(--sky-blue);
+    }
+
+    .zigzag {
+      width: 100px;
+      height: 20px;
+      background: 
+        linear-gradient(45deg, transparent 33.333%, var(--canary) 33.333%, var(--canary) 66.667%, transparent 66.667%),
+        linear-gradient(-45deg, transparent 33.333%, var(--canary) 33.333%, var(--canary) 66.667%, transparent 66.667%);
+      background-size: 20px 40px;
+    }
+
+    .content-section {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border: 4px solid #000;
+      position: relative;
+      box-shadow: 15px 15px 0 var(--hot-pink);
+    }
+
+    .content-section::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 40px;
+      height: 40px;
+      background: var(--canary);
+      border: 4px solid #000;
+      border-radius: 50%;
+    }
+
+    .adventure-card {
+      padding: 20px;
+      margin: 20px 0;
+      border: 3px solid #000;
+      position: relative;
+      background: repeating-linear-gradient(
+        45deg,
+        white,
+        white 10px,
+        rgba(0, 191, 255, 0.1) 10px,
+        rgba(0, 191, 255, 0.1) 20px
+      );
+    }
+
+    .adventure-card h2 {
+      color: var(--orange);
+      font-size: 2em;
+      margin: 0 0 20px 0;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    .adventure-card p {
+      color: #000;
+      font-size: 1.2em;
+      line-height: 1.6;
+    }
+
+    .gold-counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--canary);
+      padding: 15px;
+      border: 3px solid #000;
+      font-size: 1.2em;
+      color: #000;
+      z-index: 100;
+      transform: rotate(5deg);
+    }
+
+    .nav-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 40px 0;
+    }
+
+    .nav-button {
+      padding: 15px 30px;
+      font-family: 'Futura', sans-serif;
+      font-size: 1.2em;
+      border: 3px solid #000;
+      background: var(--sky-blue);
+      color: #000;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s;
+    }
+
+    .nav-button:hover {
+      transform: scale(1.1);
+    }
+
+    .nav-button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 255, 255, 0.1) 10px,
+        rgba(255, 255, 255, 0.1) 20px
+      );
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .floating-emoji {
+      position: absolute;
+      font-size: 2em;
+      pointer-events: none;
+      animation: float 3s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="background-patterns">
+    <div class="pattern-1"></div>
+    <div class="pattern-2"></div>
+  </div>
+
+  <div class="gold-counter">
+    💰 Gold Found: <span id="goldCount">0</span>
+  </div>
+
+  <header class="header">
+    <h1 class="title">🤠 Wild West Adventures 🌵</h1>
+    <p class="subtitle">The Memphis-Style Tales of Our Rootin' Tootin' Gunslingers</p>
+  </header>
+
+  <div class="nav-buttons">
+    <a href="index.html" class="nav-button">View Gunslinger Stats</a>
+    <button class="nav-button" onclick="addGold()">Find Gold!</button>
+  </div>
+
+  <main>
+    <section class="content-section">
+      <div class="adventure-card">
+        <h2>🌅 The Great Gold Rush of Quick Draw McGraw</h2>
+        <p>Legend has it that Quick Draw McGraw could shoot gold nuggets right out of the mountain side! With a trusty "PEW PEW" and lightning-fast reflexes, our fastest gunslinger struck gold 95 times in a single day. Some say the mountains still echo with the sound of his legendary shots.</p>
+      </div>
+
+      <div class="adventure-card">
+        <h2>🌵 Sheriff Howdy's Desert Discovery</h2>
+        <p>Armed with nothing but determination and a map drawn in hot sauce, Sheriff Howdy ventured into the Spicy Desert. Through cactus fields and pepper valleys, the good sheriff followed a trail of "YEEHAW"s to discover a hidden canyon of golden treasures!</p>
+      </div>
+
+      <div class="adventure-card">
+        <h2>🌞 Pardner Pete's Lucky Day</h2>
+        <p>They say Pardner Pete wasn't the fastest draw, but boy was he lucky! One day, while taking a nap under his favorite tumbleweed, his horse kicked a rock that revealed the entrance to an ancient gold mine. Now that's what we call a proper siesta!</p>
+      </div>
+
+      <div class="adventure-card">
+        <h2>🌙 Dusty Dan's Midnight Miracle</h2>
+        <p>Under the light of a full moon, Dusty Dan followed a mysterious glowing jackrabbit right into the heart of Ghost Gulch. There, he discovered a haunted gold mine guarded by spectral prospectors who challenged him to a dance-off. Dan's legendary boot-scootin' moves won him more gold than his pockets could carry!</p>
+      </div>
+
+      <div class="adventure-card">
+        <h2>🌸 Cactus Kate's Blooming Fortune</h2>
+        <p>Cactus Kate had a special talent - she could tell which cacti were growing over gold deposits by the way they danced in the wind. With her trusty golden spurs and a bouquet of desert flowers, she turned the Prickly Valley into a goldmine, proving that sometimes the sweetest victories come with a few thorns!</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let goldCount = 0;
+    const emojis = ['💰', '✨', '🌟', '⭐️', '🤠'];
+    
+    function addGold() {
+      goldCount += Math.floor(Math.random() * 50) + 10;
+      document.getElementById('goldCount').textContent = goldCount;
+      createFloatingEmoji();
+    }
+
+    function createFloatingEmoji() {
+      const emoji = document.createElement('div');
+      emoji.className = 'floating-emoji';
+      emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      emoji.style.left = Math.random() * window.innerWidth + 'px';
+      emoji.style.top = Math.random() * window.innerHeight + 'px';
+      document.body.appendChild(emoji);
+
+      anime({
+        targets: emoji,
+        translateY: -200,
+        opacity: [1, 0],
+        duration: 2000,
+        easing: 'easeOutExpo',
+        complete: function() {
+          emoji.remove();
+        }
+      });
+    }
+
+    // Add some random geometric shapes
+    function createShape(type) {
+      const shape = document.createElement('div');
+      shape.className = `shape ${type}`;
+      shape.style.left = Math.random() * window.innerWidth + 'px';
+      shape.style.top = Math.random() * window.innerHeight + 'px';
+      document.body.appendChild(shape);
+
+      anime({
+        targets: shape,
+        opacity: [0, 0.5, 0],
+        translateX: anime.random(-100, 100),
+        translateY: anime.random(-100, 100),
+        rotate: anime.random(-180, 180),
+        duration: anime.random(3000, 5000),
+        easing: 'easeInOutQuad',
+        complete: function() {
+          shape.remove();
+        }
+      });
+    }
+
+    setInterval(() => {
+      createShape(['circle', 'triangle', 'zigzag'][Math.floor(Math.random() * 3)]);
+    }, 2000);
+  </script>
+</body>
+</html> 
