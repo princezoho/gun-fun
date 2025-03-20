@@ -1,98 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Wild West Showdown | 3D Duel</title>
+  <title>Wild West Shooter</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Futura:wght@700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    :root {
-      --hot-pink: #FF69B4;
-      --sky-blue: #00BFFF;
-      --canary: #FFD700;
-      --lime: #32CD32;
-      --orange: #FF4500;
-    }
-
     body {
       margin: 0;
-      padding: 0;
-      font-family: 'Futura', 'Helvetica', sans-serif;
-      background: #000000;
-      color: var(--canary);
       overflow: hidden;
+      background: #2b1810;
+      font-family: Arial, sans-serif;
       cursor: crosshair;
     }
 
-    #game-container {
+    #gameCanvas {
       width: 100vw;
       height: 100vh;
-      position: relative;
     }
 
-    .ui-overlay {
+    .score {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
+      top: 20px;
+      right: 20px;
+      color: #FFD700;
+      font-size: 24px;
+      font-weight: bold;
     }
 
-    .meter-container {
-      position: fixed;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 100;
-    }
-
-    .meter {
-      width: 300px;
-      height: 40px;
-      background: rgba(0, 0, 0, 0.7);
-      border: 3px solid var(--canary);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .meter-fill {
-      position: absolute;
-      height: 100%;
-      background: var(--hot-pink);
-      width: 0%;
-      transition: width 0.1s linear;
-    }
-
-    .target-zone {
-      position: absolute;
-      width: 30px;
-      height: 100%;
-      background: var(--lime);
-      opacity: 0.5;
-      left: 135px;
-    }
-
-    .crosshair {
+    .game-over {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 40px;
-      height: 40px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      color: #FFD700;
+      display: none;
+    }
+
+    .restart-btn {
+      background: #FF69B4;
+      border: none;
+      padding: 10px 20px;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    .crosshair {
+      position: fixed;
+      width: 20px;
+      height: 20px;
       pointer-events: none;
+      z-index: 1000;
     }
 
     .crosshair::before,
     .crosshair::after {
       content: '';
       position: absolute;
-      background: var(--canary);
-      opacity: 0.8;
+      background: #FFD700;
     }
 
     .crosshair::before {
@@ -109,73 +80,6 @@
       transform: translateY(-50%);
     }
 
-    .score-panel {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 20px;
-      border: 2px solid var(--canary);
-      z-index: 100;
-      pointer-events: auto;
-    }
-
-    .score, .health {
-      font-size: 24px;
-      color: var(--canary);
-      margin: 0 0 10px 0;
-    }
-
-    .health-bar {
-      width: 200px;
-      height: 20px;
-      background: #333;
-      margin-top: 10px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .health-fill {
-      width: 100%;
-      height: 100%;
-      background: var(--hot-pink);
-      transition: width 0.3s;
-    }
-
-    .game-over {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.9);
-      padding: 40px;
-      border: 2px solid var(--canary);
-      text-align: center;
-      z-index: 1000;
-      display: none;
-    }
-
-    .game-over h2 {
-      color: var(--hot-pink);
-      font-size: 48px;
-      margin: 0 0 20px 0;
-    }
-
-    .restart-button {
-      padding: 15px 30px;
-      background: var(--canary);
-      border: none;
-      color: #000;
-      font-family: 'Futura', sans-serif;
-      font-size: 24px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .restart-button:hover {
-      transform: scale(1.1);
-    }
-
     .flash {
       position: fixed;
       top: 0;
@@ -185,370 +89,180 @@
       background: white;
       opacity: 0;
       pointer-events: none;
-      z-index: 1000;
-    }
-
-    .hamburger-menu {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      width: 60px;
-      height: 60px;
-      background: #FF69B4;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 1000;
-      transition: transform 0.3s;
-      box-shadow: 4px 4px 0 #FFD700;
-    }
-
-    .hamburger-menu:hover {
-      transform: scale(1.1) rotate(10deg);
-    }
-
-    .hamburger-lines {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 30px;
-      height: 20px;
-    }
-
-    .hamburger-line {
-      position: absolute;
-      width: 100%;
-      height: 4px;
-      background: white;
-      transition: transform 0.3s, opacity 0.3s;
-    }
-
-    .hamburger-line:nth-child(1) { top: 0; }
-    .hamburger-line:nth-child(2) { top: 8px; }
-    .hamburger-line:nth-child(3) { top: 16px; }
-
-    .hamburger-menu.active .hamburger-line:nth-child(1) {
-      transform: translateY(8px) rotate(45deg);
-    }
-
-    .hamburger-menu.active .hamburger-line:nth-child(2) {
-      opacity: 0;
-    }
-
-    .hamburger-menu.active .hamburger-line:nth-child(3) {
-      transform: translateY(-8px) rotate(-45deg);
-    }
-
-    .nav-menu {
-      position: fixed;
-      top: 0;
-      left: -300px;
-      width: 300px;
-      height: 100vh;
-      background: #00BFFF;
-      padding: 100px 20px;
-      transition: left 0.3s;
-      z-index: 999;
-    }
-
-    .nav-menu.active {
-      left: 0;
-    }
-
-    .nav-link {
-      display: block;
-      padding: 15px 20px;
-      margin: 10px 0;
-      color: white;
-      text-decoration: none;
-      font-size: 24px;
-      background: #FF69B4;
-      border-radius: 10px;
-      text-align: center;
-      transition: transform 0.3s;
-      box-shadow: 4px 4px 0 #FFD700;
-    }
-
-    .nav-link:hover {
-      transform: scale(1.1) rotate(2deg);
-    }
-
-    .nav-menu::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(circle at 10% 20%, #FFD700 1px, transparent 1px),
-        radial-gradient(circle at 90% 60%, #FF69B4 2px, transparent 2px),
-        radial-gradient(circle at 30% 80%, #32CD32 3px, transparent 3px);
-      background-size: 100px 100px;
-      opacity: 0.1;
-      pointer-events: none;
+      transition: opacity 0.1s;
     }
   </style>
 </head>
 <body>
-  <div class="hamburger-menu">
-    <div class="hamburger-lines">
-      <div class="hamburger-line"></div>
-      <div class="hamburger-line"></div>
-      <div class="hamburger-line"></div>
-    </div>
-  </div>
-  
-  <nav class="nav-menu">
-    <a href="index.html" class="nav-link">Stats</a>
-    <a href="adventures.html" class="nav-link">Adventures</a>
-    <a href="showdown.html" class="nav-link">Showdown</a>
-    <a href="saloon.html" class="nav-link">Saloon</a>
-  </nav>
-
-  <div id="game-container"></div>
-
-  <div class="ui-overlay">
-    <div class="crosshair"></div>
-    <div class="meter-container">
-      <div class="meter">
-        <div class="target-zone"></div>
-        <div class="meter-fill"></div>
-      </div>
-    </div>
-    <div class="score-panel">
-      <div class="score">Score: <span id="score">0</span></div>
-      <div class="health">Health: <span id="health">100</span>%</div>
-      <div class="health-bar">
-        <div class="health-fill"></div>
-      </div>
-    </div>
-  </div>
-
+  <canvas id="gameCanvas"></canvas>
+  <div class="score">Score: <span id="scoreValue">0</span></div>
+  <div class="crosshair"></div>
+  <div class="flash"></div>
   <div class="game-over">
     <h2>Game Over!</h2>
-    <p>Final Score: <span id="final-score">0</span></p>
-    <button class="restart-button">Try Again</button>
+    <p>Final Score: <span id="finalScore">0</span></p>
+    <button class="restart-btn" onclick="restartGame()">Play Again</button>
   </div>
 
-  <div class="flash"></div>
-
   <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const crosshair = document.querySelector('.crosshair');
+    const flash = document.querySelector('.flash');
+
+    // Set canvas size
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
     // Game state
-    let gameState = {
+    let state = {
       score: 0,
-      health: 100,
+      targets: [],
       isGameOver: false,
-      isShooting: false,
-      meterValue: 0,
-      meterDirection: 1,
-      lastShootTime: 0
+      lastSpawnTime: 0,
+      spawnInterval: 1000,
+      mouseX: 0,
+      mouseY: 0
     };
 
-    // Three.js setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    document.getElementById('game-container').appendChild(renderer.domElement);
-
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
-
-    // Environment
-    const loader = new THREE.TextureLoader();
-    
-    // Ground
-    const groundGeometry = new THREE.PlaneGeometry(100, 100);
-    const groundMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x8B4513,
-      roughness: 0.8,
-      metalness: 0.2
-    });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(ground);
-
-    // Villain setup
-    const villainGeometry = new THREE.BoxGeometry(2, 4, 1);
-    const villainMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
-    const villain = new THREE.Mesh(villainGeometry, villainMaterial);
-    villain.position.set(0, 2, -20);
-    villain.castShadow = true;
-    scene.add(villain);
-
-    // Load GLTF model
-    const gltfLoader = new THREE.GLTFLoader();
-    gltfLoader.load(
-      'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf',
-      function(gltf) {
-        villain.add(gltf.scene);
-        gltf.scene.scale.set(0.5, 0.5, 0.5);
-        gltf.scene.position.y = 2;
+    // Target class
+    class Target {
+      constructor() {
+        this.width = 60;
+        this.height = 80;
+        this.x = Math.random() * (canvas.width - this.width);
+        this.y = -this.height;
+        this.speed = 2 + Math.random() * 2;
+        this.hit = false;
       }
-    );
 
-    // Camera position
-    camera.position.set(0, 2, 5);
-    camera.lookAt(villain.position);
+      update() {
+        this.y += this.speed;
+        return this.y > canvas.height;
+      }
+
+      draw() {
+        if (this.hit) return;
+        
+        // Draw bandit
+        ctx.fillStyle = '#000000';
+        
+        // Body
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        
+        // Hat
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(this.x - 10, this.y, this.width + 20, 20);
+        
+        // Face
+        ctx.fillStyle = '#FFE4B5';
+        ctx.fillRect(this.x + 10, this.y + 25, this.width - 20, 30);
+        
+        // Eyes
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(this.x + 15, this.y + 35, 10, 10);
+        ctx.fillRect(this.x + 35, this.y + 35, 10, 10);
+        
+        // Bandana
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(this.x, this.y + 60, this.width, 10);
+      }
+
+      checkHit(x, y) {
+        if (this.hit) return false;
+        return x > this.x && x < this.x + this.width &&
+               y > this.y && y < this.y + this.height;
+      }
+    }
 
     // Game loop
-    function animate() {
-      requestAnimationFrame(animate);
-
-      if (!gameState.isGameOver) {
-        // Update meter
-        if (!gameState.isShooting) {
-          gameState.meterValue += gameState.meterDirection * 2;
-          if (gameState.meterValue >= 100 || gameState.meterValue <= 0) {
-            gameState.meterDirection *= -1;
-          }
-          document.querySelector('.meter-fill').style.width = gameState.meterValue + '%';
+    function gameLoop() {
+      if (!state.isGameOver) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Spawn new targets
+        const now = Date.now();
+        if (now - state.lastSpawnTime > state.spawnInterval) {
+          state.targets.push(new Target());
+          state.lastSpawnTime = now;
+          // Increase difficulty
+          state.spawnInterval = Math.max(500, 1000 - state.score * 10);
         }
 
-        // Villain animation
-        villain.rotation.y += 0.01;
+        // Update and draw targets
+        state.targets = state.targets.filter(target => {
+          const escaped = target.update();
+          if (escaped && !target.hit) {
+            gameOver();
+            return false;
+          }
+          target.draw();
+          return !target.hit;
+        });
       }
-
-      renderer.render(scene, camera);
+      requestAnimationFrame(gameLoop);
     }
 
     // Shooting mechanics
-    function shoot() {
-      if (gameState.isGameOver || gameState.isShooting) return;
+    function shoot(event) {
+      if (state.isGameOver) return;
 
-      const now = Date.now();
-      if (now - gameState.lastShootTime < 1000) return;
-      gameState.lastShootTime = now;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
 
-      gameState.isShooting = true;
-      const accuracy = Math.abs(gameState.meterValue - 50);
-      
       // Flash effect
-      const flash = document.querySelector('.flash');
-      flash.style.opacity = '1';
+      flash.style.opacity = '0.3';
       setTimeout(() => flash.style.opacity = '0', 50);
 
-      // Camera recoil
-      anime({
-        targets: camera.position,
-        z: '+=0.5',
-        duration: 100,
-        easing: 'easeOutQuad',
-        complete: () => {
-          anime({
-            targets: camera.position,
-            z: '-=0.5',
-            duration: 300,
-            easing: 'easeOutElastic(1, 0.5)'
-          });
+      // Check for hits
+      state.targets.forEach(target => {
+        if (target.checkHit(x, y)) {
+          target.hit = true;
+          state.score += 10;
+          document.getElementById('scoreValue').textContent = state.score;
         }
       });
-
-      // Determine hit
-      if (accuracy < 10) {
-        // Hit the villain
-        villain.material.color.setHex(0xFF0000);
-        setTimeout(() => villain.material.color.setHex(0x000000), 100);
-        
-        gameState.score += Math.floor((10 - accuracy) * 10);
-        document.getElementById('score').textContent = gameState.score;
-
-        // Villain reaction
-        anime({
-          targets: villain.position,
-          x: '+=0.5',
-          duration: 100,
-          direction: 'alternate',
-          easing: 'easeOutQuad'
-        });
-      } else {
-        // Villain shoots back
-        setTimeout(() => {
-          if (!gameState.isGameOver) {
-            gameState.health -= 10;
-            document.getElementById('health').textContent = gameState.health;
-            document.querySelector('.health-fill').style.width = gameState.health + '%';
-
-            if (gameState.health <= 0) {
-              gameOver();
-            }
-          }
-        }, 500);
-      }
-
-      setTimeout(() => {
-        gameState.isShooting = false;
-      }, 1000);
     }
 
     function gameOver() {
-      gameState.isGameOver = true;
+      state.isGameOver = true;
+      document.getElementById('finalScore').textContent = state.score;
       document.querySelector('.game-over').style.display = 'block';
-      document.getElementById('final-score').textContent = gameState.score;
+    }
+
+    function restartGame() {
+      state = {
+        score: 0,
+        targets: [],
+        isGameOver: false,
+        lastSpawnTime: 0,
+        spawnInterval: 1000,
+        mouseX: state.mouseX,
+        mouseY: state.mouseY
+      };
+      document.getElementById('scoreValue').textContent = '0';
+      document.querySelector('.game-over').style.display = 'none';
+    }
+
+    // Mouse movement for crosshair
+    function updateCrosshair(event) {
+      state.mouseX = event.clientX;
+      state.mouseY = event.clientY;
+      crosshair.style.left = (state.mouseX - 10) + 'px';
+      crosshair.style.top = (state.mouseY - 10) + 'px';
     }
 
     // Event listeners
-    window.addEventListener('click', shoot);
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    document.querySelector('.restart-button').addEventListener('click', () => {
-      gameState = {
-        score: 0,
-        health: 100,
-        isGameOver: false,
-        isShooting: false,
-        meterValue: 0,
-        meterDirection: 1,
-        lastShootTime: 0
-      };
-      document.getElementById('score').textContent = '0';
-      document.getElementById('health').textContent = '100';
-      document.querySelector('.health-fill').style.width = '100%';
-      document.querySelector('.game-over').style.display = 'none';
-    });
-
-    // Hamburger menu
-    const hamburger = document.querySelector('.hamburger-menu');
-    const navMenu = document.querySelector('.nav-menu');
-    
-    hamburger.addEventListener('click', () => {
-      hamburger.classList.toggle('active');
-      navMenu.classList.toggle('active');
-      
-      anime({
-        targets: hamburger,
-        rotate: hamburger.classList.contains('active') ? [0, 90] : [90, 0],
-        duration: 600,
-        easing: 'easeOutBounce'
-      });
-      
-      if (navMenu.classList.contains('active')) {
-        anime({
-          targets: '.nav-link',
-          translateX: [-100, 0],
-          opacity: [0, 1],
-          delay: anime.stagger(100),
-          duration: 800,
-          easing: 'easeOutElastic(1, .5)'
-        });
-      }
-    });
+    canvas.addEventListener('click', shoot);
+    window.addEventListener('mousemove', updateCrosshair);
 
     // Start the game
-    animate();
+    gameLoop();
   </script>
 </body>
 </html> 
