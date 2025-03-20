@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Wild West Showdown | Memphis Style</title>
+  <title>Wild West Showdown | 3D Duel</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Futura:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -26,32 +28,19 @@
       cursor: crosshair;
     }
 
-    .game-container {
+    #game-container {
       width: 100vw;
       height: 100vh;
       position: relative;
-      background: radial-gradient(circle at center, #331800 0%, #000000 100%);
     }
 
-    .gunslinger {
-      position: absolute;
-      width: 120px;
-      height: 120px;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 5c-5 0-10 4-10 9v16l-4 2v-7c0-2-2-4-4-4s-4 2-4 4v20l-8 4v10l8 4v20c0 2 2 4 4 4s4-2 4-4v-7l4 2v16c0 5 5 9 10 9s10-4 10-9v-16l4-2v7c0 2 2 4 4 4s4-2 4-4v-20l8-4v-10l-8-4v-20c0-2-2-4-4-4s-4 2-4 4v7l-4-2v-16c0-5-5-9-10-9z" fill="%23FFD700"/><circle cx="40" cy="35" r="3" fill="black"/><circle cx="60" cy="35" r="3" fill="black"/><path d="M45 45c0 0 5 5 10 0" stroke="black" fill="none" stroke-width="2"/></svg>') no-repeat center;
-      transform-origin: center;
-      z-index: 10;
-      transition: transform 0.3s;
-    }
-
-    .gunslinger.ready-to-shoot {
-      animation: pulse 1s infinite;
-      filter: drop-shadow(0 0 10px var(--hot-pink));
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
+    .ui-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
     }
 
     .meter-container {
@@ -60,26 +49,23 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 100;
-      pointer-events: none;
     }
 
     .meter {
       width: 300px;
       height: 40px;
-      background: #333;
+      background: rgba(0, 0, 0, 0.7);
       border: 3px solid var(--canary);
       position: relative;
       overflow: hidden;
     }
 
-    .meter-line {
+    .meter-fill {
       position: absolute;
-      width: 4px;
       height: 100%;
-      background: white;
-      box-shadow: 0 0 10px white;
-      left: 0;
-      top: 0;
+      background: var(--hot-pink);
+      width: 0%;
+      transition: width 0.1s linear;
     }
 
     .target-zone {
@@ -88,33 +74,55 @@
       height: 100%;
       background: var(--lime);
       opacity: 0.5;
-      left: 135px; /* Centered in the meter */
+      left: 135px;
     }
 
-    .meter-ball {
+    .crosshair {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      pointer-events: none;
+    }
+
+    .crosshair::before,
+    .crosshair::after {
+      content: '';
       position: absolute;
-      width: 6px;
-      height: 6px;
       background: var(--canary);
-      border-radius: 50%;
-      box-shadow: 0 0 10px var(--canary);
-      z-index: 2;
+      opacity: 0.8;
+    }
+
+    .crosshair::before {
+      width: 2px;
+      height: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .crosshair::after {
+      width: 100%;
+      height: 2px;
+      top: 50%;
+      transform: translateY(-50%);
     }
 
     .score-panel {
       position: fixed;
       top: 20px;
       right: 20px;
-      background: white;
+      background: rgba(0, 0, 0, 0.8);
       padding: 20px;
-      border: 4px solid #000;
-      box-shadow: 8px 8px 0 var(--hot-pink);
+      border: 2px solid var(--canary);
       z-index: 100;
+      pointer-events: auto;
     }
 
-    .score, .level, .timer {
+    .score, .health {
       font-size: 24px;
-      color: #000;
+      color: var(--canary);
       margin: 0 0 10px 0;
     }
 
@@ -124,6 +132,7 @@
       background: #333;
       margin-top: 10px;
       position: relative;
+      overflow: hidden;
     }
 
     .health-fill {
@@ -131,6 +140,40 @@
       height: 100%;
       background: var(--hot-pink);
       transition: width 0.3s;
+    }
+
+    .game-over {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 40px;
+      border: 2px solid var(--canary);
+      text-align: center;
+      z-index: 1000;
+      display: none;
+    }
+
+    .game-over h2 {
+      color: var(--hot-pink);
+      font-size: 48px;
+      margin: 0 0 20px 0;
+    }
+
+    .restart-button {
+      padding: 15px 30px;
+      background: var(--canary);
+      border: none;
+      color: #000;
+      font-family: 'Futura', sans-serif;
+      font-size: 24px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .restart-button:hover {
+      transform: scale(1.1);
     }
 
     .flash {
@@ -145,94 +188,18 @@
       z-index: 1000;
     }
 
-    .nav-bar {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      display: flex;
-      gap: 10px;
-      z-index: 100;
-    }
-
-    .nav-button {
-      padding: 10px 20px;
-      background: var(--sky-blue);
-      border: 3px solid #000;
-      color: #000;
-      font-family: 'Futura', sans-serif;
-      font-size: 16px;
-      cursor: pointer;
-      text-decoration: none;
-      box-shadow: 4px 4px 0 var(--hot-pink);
-      transition: transform 0.2s;
-    }
-
-    .nav-button:hover {
-      transform: scale(1.1);
-    }
-
-    .level-up {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      background: white;
-      padding: 40px;
-      border: 4px solid #000;
-      box-shadow: 15px 15px 0 var(--hot-pink);
-      text-align: center;
-      z-index: 1000;
-    }
-
-    .level-up h2 {
-      color: var(--orange);
-      font-size: 48px;
-      margin: 0 0 20px 0;
-      text-shadow: 3px 3px 0 #000;
-    }
-
-    .game-over {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      background: white;
-      padding: 40px;
-      border: 4px solid #000;
-      box-shadow: 15px 15px 0 var(--hot-pink);
-      text-align: center;
-      z-index: 1000;
-    }
-
-    .bullet-trail {
-      position: absolute;
-      background: linear-gradient(90deg, var(--canary), transparent);
-      height: 2px;
-      transform-origin: left;
-      pointer-events: none;
-    }
-
-    .dust-particle {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      background: rgba(255, 215, 0, 0.6);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
     .hamburger-menu {
       position: fixed;
       top: 20px;
       left: 20px;
       width: 60px;
       height: 60px;
-      background: var(--hot-pink);
+      background: #FF69B4;
       border-radius: 50%;
       cursor: pointer;
       z-index: 1000;
       transition: transform 0.3s;
-      box-shadow: 4px 4px 0 var(--canary);
+      box-shadow: 4px 4px 0 #FFD700;
     }
 
     .hamburger-menu:hover {
@@ -278,7 +245,7 @@
       left: -300px;
       width: 300px;
       height: 100vh;
-      background: var(--sky-blue);
+      background: #00BFFF;
       padding: 100px 20px;
       transition: left 0.3s;
       z-index: 999;
@@ -295,11 +262,11 @@
       color: white;
       text-decoration: none;
       font-size: 24px;
-      background: var(--hot-pink);
+      background: #FF69B4;
       border-radius: 10px;
       text-align: center;
       transition: transform 0.3s;
-      box-shadow: 4px 4px 0 var(--canary);
+      box-shadow: 4px 4px 0 #FFD700;
     }
 
     .nav-link:hover {
@@ -314,9 +281,9 @@
       width: 100%;
       height: 100%;
       background: 
-        radial-gradient(circle at 10% 20%, var(--canary) 1px, transparent 1px),
-        radial-gradient(circle at 90% 60%, var(--hot-pink) 2px, transparent 2px),
-        radial-gradient(circle at 30% 80%, var(--lime) 3px, transparent 3px);
+        radial-gradient(circle at 10% 20%, #FFD700 1px, transparent 1px),
+        radial-gradient(circle at 90% 60%, #FF69B4 2px, transparent 2px),
+        radial-gradient(circle at 30% 80%, #32CD32 3px, transparent 3px);
       background-size: 100px 100px;
       opacity: 0.1;
       pointer-events: none;
@@ -324,75 +291,236 @@
   </style>
 </head>
 <body>
-  <div class="game-container">
-    <div class="hamburger-menu">
-      <div class="hamburger-lines">
-        <div class="hamburger-line"></div>
-        <div class="hamburger-line"></div>
-        <div class="hamburger-line"></div>
-      </div>
+  <div class="hamburger-menu">
+    <div class="hamburger-lines">
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
     </div>
-    
-    <nav class="nav-menu">
-      <a href="index.html" class="nav-link">Stats</a>
-      <a href="adventures.html" class="nav-link">Adventures</a>
-      <a href="showdown.html" class="nav-link">Showdown</a>
-      <a href="saloon.html" class="nav-link">Saloon</a>
-    </nav>
+  </div>
+  
+  <nav class="nav-menu">
+    <a href="index.html" class="nav-link">Stats</a>
+    <a href="adventures.html" class="nav-link">Adventures</a>
+    <a href="showdown.html" class="nav-link">Showdown</a>
+    <a href="saloon.html" class="nav-link">Saloon</a>
+  </nav>
 
-    <div class="score-panel">
-      <p class="level">Level: <span id="level">1</span></p>
-      <p class="score">Score: <span id="score">0</span></p>
-      <p class="timer">Time: <span id="timer">30</span>s</p>
-      <div class="health-bar">
-        <div class="health-fill" id="health"></div>
-      </div>
-    </div>
+  <div id="game-container"></div>
 
+  <div class="ui-overlay">
+    <div class="crosshair"></div>
     <div class="meter-container">
       <div class="meter">
         <div class="target-zone"></div>
-        <div class="meter-line" id="meter-line"></div>
+        <div class="meter-fill"></div>
       </div>
     </div>
-
-    <div class="flash"></div>
-    
-    <div class="level-up">
-      <h2>Level Up!</h2>
-      <p>Get ready for faster gunslingers!</p>
-      <button class="nav-button" onclick="startNextLevel()">Continue</button>
-    </div>
-
-    <div class="game-over">
-      <h2>Game Over, Partner!</h2>
-      <p>Final Score: <span id="final-score">0</span></p>
-      <p>Best Score: <span id="best-score">0</span></p>
-      <button class="nav-button" onclick="startGame()">Try Again!</button>
+    <div class="score-panel">
+      <div class="score">Score: <span id="score">0</span></div>
+      <div class="health">Health: <span id="health">100</span>%</div>
+      <div class="health-bar">
+        <div class="health-fill"></div>
+      </div>
     </div>
   </div>
 
-  <audio id="gunshot" src="https://assets.mixkit.co/active_storage/sfx/2684/2684-preview.mp3"></audio>
-  <audio id="ricochet" src="https://assets.mixkit.co/active_storage/sfx/2681/2681-preview.mp3"></audio>
-  <audio id="hit" src="https://assets.mixkit.co/active_storage/sfx/2682/2682-preview.mp3"></audio>
-  <audio id="background-music" src="https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3" loop></audio>
+  <div class="game-over">
+    <h2>Game Over!</h2>
+    <p>Final Score: <span id="final-score">0</span></p>
+    <button class="restart-button">Try Again</button>
+  </div>
+
+  <div class="flash"></div>
 
   <script>
-    let score = 0;
-    let level = 1;
-    let timeLeft = 30;
-    let health = 100;
-    let gameInterval;
-    let bestScore = localStorage.getItem('bestScore') || 0;
-    let isPlaying = false;
-    let currentGunslinger = null;
-    let meterPosition = 0;
-    let meterDirection = 1;
-    const METER_SPEED = 3;
-    const METER_WIDTH = 300;
-    const TARGET_START = 135;
-    const TARGET_WIDTH = 30;
+    // Game state
+    let gameState = {
+      score: 0,
+      health: 100,
+      isGameOver: false,
+      isShooting: false,
+      meterValue: 0,
+      meterDirection: 1,
+      lastShootTime: 0
+    };
 
+    // Three.js setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('game-container').appendChild(renderer.domElement);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    // Environment
+    const loader = new THREE.TextureLoader();
+    
+    // Ground
+    const groundGeometry = new THREE.PlaneGeometry(100, 100);
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x8B4513,
+      roughness: 0.8,
+      metalness: 0.2
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Villain setup
+    const villainGeometry = new THREE.BoxGeometry(2, 4, 1);
+    const villainMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    const villain = new THREE.Mesh(villainGeometry, villainMaterial);
+    villain.position.set(0, 2, -20);
+    villain.castShadow = true;
+    scene.add(villain);
+
+    // Load GLTF model
+    const gltfLoader = new THREE.GLTFLoader();
+    gltfLoader.load(
+      'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf',
+      function(gltf) {
+        villain.add(gltf.scene);
+        gltf.scene.scale.set(0.5, 0.5, 0.5);
+        gltf.scene.position.y = 2;
+      }
+    );
+
+    // Camera position
+    camera.position.set(0, 2, 5);
+    camera.lookAt(villain.position);
+
+    // Game loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (!gameState.isGameOver) {
+        // Update meter
+        if (!gameState.isShooting) {
+          gameState.meterValue += gameState.meterDirection * 2;
+          if (gameState.meterValue >= 100 || gameState.meterValue <= 0) {
+            gameState.meterDirection *= -1;
+          }
+          document.querySelector('.meter-fill').style.width = gameState.meterValue + '%';
+        }
+
+        // Villain animation
+        villain.rotation.y += 0.01;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // Shooting mechanics
+    function shoot() {
+      if (gameState.isGameOver || gameState.isShooting) return;
+
+      const now = Date.now();
+      if (now - gameState.lastShootTime < 1000) return;
+      gameState.lastShootTime = now;
+
+      gameState.isShooting = true;
+      const accuracy = Math.abs(gameState.meterValue - 50);
+      
+      // Flash effect
+      const flash = document.querySelector('.flash');
+      flash.style.opacity = '1';
+      setTimeout(() => flash.style.opacity = '0', 50);
+
+      // Camera recoil
+      anime({
+        targets: camera.position,
+        z: '+=0.5',
+        duration: 100,
+        easing: 'easeOutQuad',
+        complete: () => {
+          anime({
+            targets: camera.position,
+            z: '-=0.5',
+            duration: 300,
+            easing: 'easeOutElastic(1, 0.5)'
+          });
+        }
+      });
+
+      // Determine hit
+      if (accuracy < 10) {
+        // Hit the villain
+        villain.material.color.setHex(0xFF0000);
+        setTimeout(() => villain.material.color.setHex(0x000000), 100);
+        
+        gameState.score += Math.floor((10 - accuracy) * 10);
+        document.getElementById('score').textContent = gameState.score;
+
+        // Villain reaction
+        anime({
+          targets: villain.position,
+          x: '+=0.5',
+          duration: 100,
+          direction: 'alternate',
+          easing: 'easeOutQuad'
+        });
+      } else {
+        // Villain shoots back
+        setTimeout(() => {
+          if (!gameState.isGameOver) {
+            gameState.health -= 10;
+            document.getElementById('health').textContent = gameState.health;
+            document.querySelector('.health-fill').style.width = gameState.health + '%';
+
+            if (gameState.health <= 0) {
+              gameOver();
+            }
+          }
+        }, 500);
+      }
+
+      setTimeout(() => {
+        gameState.isShooting = false;
+      }, 1000);
+    }
+
+    function gameOver() {
+      gameState.isGameOver = true;
+      document.querySelector('.game-over').style.display = 'block';
+      document.getElementById('final-score').textContent = gameState.score;
+    }
+
+    // Event listeners
+    window.addEventListener('click', shoot);
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    document.querySelector('.restart-button').addEventListener('click', () => {
+      gameState = {
+        score: 0,
+        health: 100,
+        isGameOver: false,
+        isShooting: false,
+        meterValue: 0,
+        meterDirection: 1,
+        lastShootTime: 0
+      };
+      document.getElementById('score').textContent = '0';
+      document.getElementById('health').textContent = '100';
+      document.querySelector('.health-fill').style.width = '100%';
+      document.querySelector('.game-over').style.display = 'none';
+    });
+
+    // Hamburger menu
     const hamburger = document.querySelector('.hamburger-menu');
     const navMenu = document.querySelector('.nav-menu');
     
@@ -419,316 +547,8 @@
       }
     });
 
-    function startGame() {
-      // Reset game state
-      score = 0;
-      level = 1;
-      timeLeft = 30;
-      health = 100;
-      document.getElementById('score').textContent = score;
-      document.getElementById('timer').textContent = timeLeft;
-      document.getElementById('level').textContent = level;
-      document.getElementById('health').style.width = '100%';
-      document.querySelector('.game-over').style.transform = 'translate(-50%, -50%) scale(0)';
-      
-      // Clear existing gunslingers
-      if (currentGunslinger) {
-        currentGunslinger.remove();
-        currentGunslinger = null;
-      }
-      
-      // Start game loop
-      isPlaying = true;
-      gameInterval = setInterval(() => {
-        timeLeft--;
-        document.getElementById('timer').textContent = timeLeft;
-        
-        if (timeLeft <= 0 || health <= 0) {
-          endGame();
-        }
-      }, 1000);
-
-      // Start spawning gunslingers
-      spawnGunslinger();
-      
-      // Play background music
-      document.getElementById('background-music').play();
-
-      // Reset meter
-      meterPosition = 0;
-      meterDirection = 1;
-      startMeterAnimation();
-    }
-
-    function startNextLevel() {
-      level++;
-      timeLeft += 20;
-      document.getElementById('level').textContent = level;
-      document.getElementById('timer').textContent = timeLeft;
-      document.querySelector('.level-up').style.transform = 'translate(-50%, -50%) scale(0)';
-      spawnGunslinger();
-    }
-
-    function endGame() {
-      isPlaying = false;
-      clearInterval(gameInterval);
-      if (score > bestScore) {
-        bestScore = score;
-        localStorage.setItem('bestScore', bestScore);
-      }
-      document.getElementById('final-score').textContent = score;
-      document.getElementById('best-score').textContent = bestScore;
-      
-      anime({
-        targets: '.game-over',
-        scale: [0, 1],
-        duration: 800,
-        easing: 'easeOutElastic(1, 0.8)'
-      });
-      
-      document.getElementById('background-music').pause();
-      document.getElementById('background-music').currentTime = 0;
-
-      if (currentGunslinger) {
-        currentGunslinger.remove();
-        currentGunslinger = null;
-      }
-    }
-
-    function spawnGunslinger() {
-      if (!isPlaying) return;
-      if (currentGunslinger) return;
-
-      const gunslinger = document.createElement('div');
-      gunslinger.className = 'gunslinger';
-      
-      // Random position along the edges
-      const side = Math.floor(Math.random() * 4);
-      const container = document.querySelector('.game-container');
-      
-      switch(side) {
-        case 0: // Top
-          gunslinger.style.top = '0';
-          gunslinger.style.left = Math.random() * (container.offsetWidth - 120) + 'px';
-          break;
-        case 1: // Right
-          gunslinger.style.right = '0';
-          gunslinger.style.top = Math.random() * (container.offsetHeight - 120) + 'px';
-          break;
-        case 2: // Bottom
-          gunslinger.style.bottom = '0';
-          gunslinger.style.left = Math.random() * (container.offsetWidth - 120) + 'px';
-          break;
-        case 3: // Left
-          gunslinger.style.left = '0';
-          gunslinger.style.top = Math.random() * (container.offsetHeight - 120) + 'px';
-          break;
-      }
-      
-      document.querySelector('.game-container').appendChild(gunslinger);
-      currentGunslinger = gunslinger;
-
-      // Animate gunslinger entrance
-      anime({
-        targets: gunslinger,
-        scale: [0, 1],
-        rotate: [360, 0],
-        duration: 600,
-        easing: 'easeOutElastic(1, 0.8)',
-        complete: () => {
-          gunslinger.classList.add('ready-to-shoot');
-          // Gunslinger will shoot after random delay
-          setTimeout(() => {
-            if (gunslinger.parentNode) {
-              gunslingerShoot();
-            }
-          }, Math.random() * 2000 + 1000);
-        }
-      });
-    }
-
-    function gunslingerShoot() {
-      if (!currentGunslinger || !isPlaying) return;
-
-      const flash = document.querySelector('.flash');
-      anime({
-        targets: flash,
-        opacity: [0.8, 0],
-        duration: 100,
-        easing: 'linear'
-      });
-
-      // Play gunshot sound
-      const gunshot = document.getElementById('gunshot').cloneNode();
-      gunshot.volume = 0.3;
-      gunshot.play();
-
-      // Reduce player health
-      health -= 20;
-      document.getElementById('health').style.width = health + '%';
-
-      // Create bullet trail effect
-      createBulletTrail(currentGunslinger);
-
-      if (health <= 0) {
-        endGame();
-      }
-    }
-
-    function createBulletTrail(gunslinger) {
-      const trail = document.createElement('div');
-      trail.className = 'bullet-trail';
-      const rect = gunslinger.getBoundingClientRect();
-      trail.style.left = rect.left + rect.width/2 + 'px';
-      trail.style.top = rect.top + rect.height/2 + 'px';
-      
-      const angle = Math.atan2(
-        window.innerHeight/2 - rect.top,
-        window.innerWidth/2 - rect.left
-      );
-      const distance = Math.sqrt(
-        Math.pow(window.innerHeight/2 - rect.top, 2) +
-        Math.pow(window.innerWidth/2 - rect.left, 2)
-      );
-
-      trail.style.width = distance + 'px';
-      trail.style.transform = `rotate(${angle}rad)`;
-      
-      document.body.appendChild(trail);
-      
-      anime({
-        targets: trail,
-        opacity: [1, 0],
-        duration: 200,
-        easing: 'linear',
-        complete: () => trail.remove()
-      });
-    }
-
-    function startMeterAnimation() {
-      function animateMeter() {
-        if (!isPlaying) return;
-
-        meterPosition += METER_SPEED * meterDirection;
-        
-        // Reverse direction at edges
-        if (meterPosition >= METER_WIDTH || meterPosition <= 0) {
-          meterDirection *= -1;
-        }
-        
-        const line = document.getElementById('meter-line');
-        line.style.left = meterPosition + 'px';
-
-        requestAnimationFrame(animateMeter);
-      }
-
-      animateMeter();
-    }
-
-    function checkAccuracy() {
-      // Check if line is in target zone
-      return meterPosition >= TARGET_START && 
-             meterPosition <= (TARGET_START + TARGET_WIDTH);
-    }
-
-    // Space bar handling
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && isPlaying && currentGunslinger) {
-        e.preventDefault();
-        
-        if (checkAccuracy()) {
-          successfulShot();
-        } else {
-          missShot();
-        }
-      }
-    });
-
-    function successfulShot() {
-      if (!currentGunslinger) return;
-
-      // Play hit sound
-      const hit = document.getElementById('hit').cloneNode();
-      hit.volume = 0.3;
-      hit.play();
-
-      // Animate gunslinger destruction
-      anime({
-        targets: currentGunslinger,
-        scale: [1, 1.5],
-        rotate: 720,
-        opacity: 0,
-        duration: 500,
-        easing: 'easeOutQuad',
-        complete: () => {
-          currentGunslinger.remove();
-          currentGunslinger = null;
-        }
-      });
-
-      // Create dust particles
-      createDustEffect(currentGunslinger);
-
-      // Update score
-      score += 10 * level;
-      document.getElementById('score').textContent = score;
-
-      // Check for level up
-      if (score >= level * 100) {
-        showLevelUp();
-      } else {
-        setTimeout(spawnGunslinger, 1000);
-      }
-    }
-
-    function missShot() {
-      // Play ricochet sound
-      const ricochet = document.getElementById('ricochet').cloneNode();
-      ricochet.volume = 0.3;
-      ricochet.play();
-
-      // Reset meter
-      meterPosition = 0;
-      meterDirection = 1;
-      const line = document.getElementById('meter-line');
-      line.style.left = '0px';
-    }
-
-    function createDustEffect(gunslinger) {
-      const rect = gunslinger.getBoundingClientRect();
-      for (let i = 0; i < 20; i++) {
-        const dust = document.createElement('div');
-        dust.className = 'dust-particle';
-        dust.style.left = rect.left + rect.width/2 + 'px';
-        dust.style.top = rect.top + rect.height/2 + 'px';
-        document.body.appendChild(dust);
-
-        anime({
-          targets: dust,
-          translateX: anime.random(-100, 100),
-          translateY: anime.random(-100, 100),
-          scale: [1, 0],
-          opacity: [1, 0],
-          duration: anime.random(500, 1000),
-          easing: 'easeOutQuad',
-          complete: () => dust.remove()
-        });
-      }
-    }
-
-    function showLevelUp() {
-      anime({
-        targets: '.level-up',
-        scale: [0, 1],
-        duration: 800,
-        easing: 'easeOutElastic(1, 0.8)'
-      });
-    }
-
-    // Start game on load
-    window.addEventListener('load', () => {
-      document.querySelector('.game-over').style.transform = 'translate(-50%, -50%) scale(1)';
-    });
+    // Start the game
+    animate();
   </script>
 </body>
 </html> 
